@@ -39,7 +39,7 @@
     position: absolute;
     background: #FFE0B3;
     border-top: 1px solid #95A0A7;
-    box-shadow: 0px -1px 2px #00000087;
+    /* box-shadow: 0px -1px 2px #00000087; */
     border-radius: 0px 0px 8px 8px;
     width: 100%;
     bottom: 0;
