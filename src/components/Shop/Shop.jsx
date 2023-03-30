@@ -6,7 +6,7 @@ import { addToDb, getShoppingCart } from "../../utilities/fakedb";
 const Shop = () => {
   //   getting products from products.json and setting those products to products variable
   const [products, setProducts] = useState([]);
-  //
+  //for step 4
   const [cart, setCart] = useState([]);
   useEffect(() => {
     fetch("products.json")
@@ -20,6 +20,7 @@ const Shop = () => {
     //though first time it will run by default and 2nd time it will run whenever products value changes
     // console.log('products',products);
     const storedCart = getShoppingCart();
+    const savedCart = [];
     // console.log("stored cart",storedCart);
     // step 1 : get id
     for(const id in storedCart){
@@ -32,16 +33,31 @@ const Shop = () => {
         if(addedProduct){
         const quantity = storedCart[id];
         addedProduct.quantity = quantity;
-        console.log(addedProduct);
+        //step 4 saveCart ; make a new array with all the objects we have in local storage with all its properties
+        savedCart.push(addedProduct);
+        // console.log(addedProduct);
         }
-        
-    }
+     //step 4 contd   
+    }setCart(savedCart);
   }, [products]);
   // declaring a function that takes a obj and adds that obj to newCart variable along with existing cart objects and updates localStorage
   const handleAddToCart = (product) => {
     // cart.push(product) //but it doesnt work in react as state is immutable
-    const newCart = [...cart, product];
+    // const newCart = [...cart, product];
+    let newCart = [];
+    //if product doesnt exist in the cart then set quantity = 1
+    //if exists update the quantity by 1
     // console.log("cart is -",cart)
+    const exists = cart.find(pd => pd.id === product.id);
+    if(!exists){
+        product.quantity = 1;
+        newCart= [...cart,product]
+    }
+    else{
+        exists.quantity = exists.quantity + 1;
+        const remaining = cart.filter(pd => pd.id !== product.id);
+        newCart = [...remaining,exists];
+    }
     setCart(newCart);
     //just adding the product id; remember not the whole product
     addToDb(product.id);
