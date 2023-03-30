@@ -28,7 +28,7 @@ const Shop = () => {
         const addedProduct = products.find(product => product.id === id);
         // console.log(addedProduct);
         // step 3: get quantity of the product
-        // for dependency first addedProduct is empty
+        // for dependency first addedProduct is empty to handle that error we use if
         if(addedProduct){
         const quantity = storedCart[id];
         addedProduct.quantity = quantity;
