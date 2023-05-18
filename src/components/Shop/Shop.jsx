@@ -7,7 +7,7 @@ import {
   deleteShoppingCart,
   getShoppingCart,
 } from "../../utilities/fakedb";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowRight,
@@ -20,39 +20,48 @@ const Shop = () => {
   const [products, setProducts] = useState([]);
   //for step 4
   const [cart, setCart] = useState([]);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const { totalProducts } = useLoaderData();
+
+  const totalPages = Math.ceil(totalProducts / itemsPerPage);
+
+  const pageNumbers = [...Array(totalPages).keys()];
+  const [currentPage, setCurrentPage] = useState(0);
+
   useEffect(() => {
-    fetch("http://localhost:5000/products")
+    fetch(
+      `http://localhost:5000/products?page=${currentPage}&limit=${itemsPerPage}`
+    )
       .then((res) => res.json())
       .then((data) => setProducts(data));
-  }, []);
-  //just printing the cart obj to see whats there
+  }, [currentPage, itemsPerPage]);
+
   useEffect(() => {
-    //it wont show the products as products.json might not be yet loaded and this useeffect has already been executed
-    //thats why we set dependency
-    //though first time it will run by default and 2nd time it will run whenever products value changes
-    // console.log('products',products);
     const storedCart = getShoppingCart();
-    const savedCart = [];
-    // console.log("stored cart",storedCart);
-    // step 1 : get id
-    for (const id in storedCart) {
-      // console.log(id)
-      //step 2 : get the product using id ; we used find as its obvious that only one unique id will be there
-      const addedProduct = products.find((product) => product._id === id);
-      // console.log(addedProduct);
-      // step 3: get quantity of the product
-      // for dependency first addedProduct is empty to handle that error we use if
-      if (addedProduct) {
-        const quantity = storedCart[id];
-        addedProduct.quantity = quantity;
-        //step 4 saveCart ; make a new array with all the objects we have in local storage with all its properties
-        savedCart.push(addedProduct);
-        // console.log(addedProduct);
-      }
-      //step 4 contd
-    }
-    setCart(savedCart);
-  }, [products]);
+    const ids = Object.keys(storedCart);
+
+    fetch("http://localhost:5000/productsByIds", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(ids),
+    })
+      .then((res) => res.json())
+      .then((cartProducts) => {
+        const savedCart = [];
+
+        for (const id in storedCart) {
+          const addedProduct = cartProducts.find(product => product._id === id);
+          if (addedProduct) {
+            const quantity = storedCart[id];
+            addedProduct.quantity = quantity;
+            savedCart.push(addedProduct);
+          }
+        }
+        setCart(savedCart);
+      });
+  }, []);
   // declaring a function that takes a obj and adds that obj to newCart variable along with existing cart objects and updates localStorage
   const handleAddToCart = (product) => {
     // cart.push(product) //but it doesnt work in react as state is immutable
@@ -80,28 +89,59 @@ const Shop = () => {
     deleteShoppingCart();
   };
 
+  const options = [5, 10, 20];
+  const handleSelectChange = (event) => {
+    setItemsPerPage(parseInt(event.target.value));
+    setCurrentPage(0);
+  };
+  console.log(itemsPerPage);
   return (
-    <div className="shop-container">
-      <div className="products-container">
-        {products.map((product) => (
-          <Product
-            key={product._id}
-            product={product}
-            handleAddToCart={handleAddToCart}
-          ></Product>
+    <>
+      <div className="shop-container">
+        <div className="products-container">
+          {products.map((product) => (
+            <Product
+              key={product._id}
+              product={product}
+              handleAddToCart={handleAddToCart}
+            ></Product>
+          ))}
+        </div>
+        <div className="cart-container">
+          <Cart cart={cart} handleClearCart={handleClearCart}>
+            <Link to="/orders">
+              <button className="btn-proceed">
+                Review Order
+                <FontAwesomeIcon className="proceed-icon" icon={faArrowRight} />
+              </button>
+            </Link>
+          </Cart>
+        </div>
+      </div>
+
+      {/* pagination */}
+      <div className="pagination">
+        <p>
+          curent page: {currentPage} and items per page: {itemsPerPage}
+        </p>
+        <select value={itemsPerPage} onChange={handleSelectChange}>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {pageNumbers.map((number) => (
+          <button
+            key={number}
+            className={currentPage === number ? "selected" : ""}
+            onClick={() => setCurrentPage(number)}
+          >
+            {number+1}
+          </button>
         ))}
       </div>
-      <div className="cart-container">
-        <Cart cart={cart} handleClearCart={handleClearCart}>
-          <Link to="/orders">
-            <button className="btn-proceed">
-              Review Order
-              <FontAwesomeIcon className="proceed-icon" icon={faArrowRight} />
-            </button>
-          </Link>
-        </Cart>
-      </div>
-    </div>
+    </>
   );
 };
 
