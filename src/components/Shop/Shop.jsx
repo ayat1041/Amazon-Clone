@@ -9,14 +9,19 @@ import {
 } from "../../utilities/fakedb";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRight, faCartShopping, faCreditCard, faTrashCan } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRight,
+  faCartShopping,
+  faCreditCard,
+  faTrashCan,
+} from "@fortawesome/free-solid-svg-icons";
 const Shop = () => {
   //   getting products from products.json and setting those products to products variable
   const [products, setProducts] = useState([]);
   //for step 4
   const [cart, setCart] = useState([]);
   useEffect(() => {
-    fetch("products.json")
+    fetch("http://localhost:5000/products")
       .then((res) => res.json())
       .then((data) => setProducts(data));
   }, []);
@@ -33,7 +38,7 @@ const Shop = () => {
     for (const id in storedCart) {
       // console.log(id)
       //step 2 : get the product using id ; we used find as its obvious that only one unique id will be there
-      const addedProduct = products.find((product) => product.id === id);
+      const addedProduct = products.find((product) => product._id === id);
       // console.log(addedProduct);
       // step 3: get quantity of the product
       // for dependency first addedProduct is empty to handle that error we use if
@@ -56,18 +61,18 @@ const Shop = () => {
     //if product doesnt exist in the cart then set quantity = 1
     //if exists update the quantity by 1
     // console.log("cart is -",cart)
-    const exists = cart.find((pd) => pd.id === product.id);
+    const exists = cart.find((pd) => pd._id === product._id);
     if (!exists) {
       product.quantity = 1;
       newCart = [...cart, product];
     } else {
       exists.quantity = exists.quantity + 1;
-      const remaining = cart.filter((pd) => pd.id !== product.id);
+      const remaining = cart.filter((pd) => pd._id !== product._id);
       newCart = [...remaining, exists];
     }
     setCart(newCart);
     //just adding the product id; remember not the whole product
-    addToDb(product.id);
+    addToDb(product._id);
   };
 
   const handleClearCart = () => {
@@ -80,7 +85,7 @@ const Shop = () => {
       <div className="products-container">
         {products.map((product) => (
           <Product
-            key={product.id}
+            key={product._id}
             product={product}
             handleAddToCart={handleAddToCart}
           ></Product>
@@ -89,8 +94,9 @@ const Shop = () => {
       <div className="cart-container">
         <Cart cart={cart} handleClearCart={handleClearCart}>
           <Link to="/orders">
-            <button className="btn-proceed">Review Order
-            <FontAwesomeIcon className="proceed-icon" icon={faArrowRight} />
+            <button className="btn-proceed">
+              Review Order
+              <FontAwesomeIcon className="proceed-icon" icon={faArrowRight} />
             </button>
           </Link>
         </Cart>
